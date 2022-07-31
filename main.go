@@ -7,19 +7,24 @@ import (
 	"time"
 )
 
+const (
+	etalonTime = "15:04:05"
+	fileJSON = "data.json"
+)
+
 type Trains []Train
 
 type Train struct {
-	TrainID            int			`json:"trainId"` 
-	DepartureStationID int			`json:"departureStationID"`
-	ArrivalStationID   int			`json:"arrivalStationId"`
-	Price              float32		`json:"price"`
+	TrainID            int		`json:"trainId"` 
+	DepartureStationID int		`json:"departureStationID"`
+	ArrivalStationID   int		`json:"arrivalStationId"`
+	Price              float32	`json:"price"`
 	ArrivalTime        time.Time	`json:"arrivalTime"`
 	DepartureTime      time.Time	`json:"departureTime"`
 }
 
 func readDataJSON() (data string) {
-	jsonFile, err := os.ReadFile("data.json")
+	jsonFile, err := os.ReadFile(fileJSON)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -50,16 +55,29 @@ func (t *Train) UnmarshalJSON(data []byte)error {
 	t.Price = float32(price)
 
 	arrTime, _ := byteValue["arrivalTime"].(string)
-	t.ArrivalTime, _ = time.Parse("15:04:05", arrTime)
+	t.ArrivalTime, _ = time.Parse(etalonTime, arrTime)
 
 	depTime, _ := byteValue["departureTime"].(string)
-	t.DepartureTime, _ = time.Parse("15:04:05", depTime)
+	t.DepartureTime, _ = time.Parse(etalonTime, depTime)
 
 	return nil
 }
 
+func userRequest() (input string) {
+	fmt.Scanln(& input)
+	return input
+}
+
 func main() {
 	//	... запит даних від користувача
+	fmt.Println("enter departure station id: ")
+	depStationId := userRequest()
+	fmt.Println("enter arrival station id: ")
+	arrStationId := userRequest()
+	fmt.Println("enter criteria: ")
+	criteria := userRequest()
+
+	fmt.Println(depStationId, arrStationId, criteria)
 	//result, err := FindTrains(departureStation, arrivalStation, criteria))
 	//	... обробка помилки
 	//	... друк result
