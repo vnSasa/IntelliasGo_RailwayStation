@@ -23,7 +23,7 @@ type Train struct {
 	DepartureTime      time.Time	`json:"departureTime"`
 }
 
-func readDataJSON() (data string) {
+func readDataJSON() (data Trains) {
 	jsonFile, err := os.ReadFile(fileJSON)
 	if err != nil {
 		fmt.Println(err)
@@ -71,19 +71,26 @@ func userRequest() (input string) {
 func main() {
 	//	... запит даних від користувача
 	fmt.Println("enter departure station id: ")
-	depStationId := userRequest()
+	departureStation := userRequest()
 	fmt.Println("enter arrival station id: ")
-	arrStationId := userRequest()
+	arrivalStation := userRequest()
 	fmt.Println("enter criteria: ")
 	criteria := userRequest()
 
-	fmt.Println(depStationId, arrStationId, criteria)
-	//result, err := FindTrains(departureStation, arrivalStation, criteria))
+	result, err := FindTrains(departureStation, arrivalStation, criteria)
 	//	... обробка помилки
+	if err != nil {
+		fmt.Printf("invalid data entered - %v", err)
+	}
 	//	... друк result
+	for _, v := range result {
+		fmt.Println(v)
+	}
 }
 
 func FindTrains(departureStation, arrivalStation, criteria string) (Trains, error) {
 	// ... код
-	return nil, nil // маєте повернути правильні значення
+	var trains Trains
+	trains = readDataJSON()
+	return trains, nil // маєте повернути правильні значення
 }
