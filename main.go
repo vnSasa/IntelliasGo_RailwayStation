@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sort"
 )
 
 const (
@@ -16,9 +17,9 @@ const (
 )
 
 var (
-	UnsupportedCriteria			= errors.New("unsupported criteria")
+	UnsupportedCriteria		= errors.New("unsupported criteria")
 	EmptyDepartureStation		= errors.New("empty departure station")
-	EmptyArrivalStation			= errors.New("empty arrival station")
+	EmptyArrivalStation		= errors.New("empty arrival station")
 	BadArrivalStationInput		= errors.New("bad arrival station input")
 	BadDepartureStationInput	= errors.New("bad departure station input")
 )
@@ -26,12 +27,12 @@ var (
 type Trains []Train
 
 type Train struct {
-	TrainID					int		`json:"trainId"` 
+	TrainID				int		`json:"trainId"` 
 	DepartureStationID		int		`json:"departureStationId"`
 	ArrivalStationID		int		`json:"arrivalStationId"`
-	Price					float32		`json:"price"`
-	ArrivalTime				time.Time		`json:"arrivalTime"`
-	DepartureTime			time.Time		`json:"departureTime"`
+	Price				float32		`json:"price"`
+	ArrivalTime			time.Time	`json:"arrivalTime"`
+	DepartureTime			time.Time	`json:"departureTime"`
 }
 
 func readDataJSON() (data Trains) {
@@ -86,7 +87,7 @@ func main() {
 	fmt.Println("enter arrival station id: ")
 	arrivalStation := userRequest()
 	fmt.Println("enter criteria: ")
-	criteria := userRequest()
+	criteria := strings.ToLower(userRequest())
 
 	result, err := FindTrains(departureStation, arrivalStation, criteria)
 	//	... обробка помилки
@@ -104,6 +105,7 @@ func FindTrains(departureStation, arrivalStation, criteria string) (Trains, erro
 	var trains Trains
 	trains = readDataJSON()
 	trains = filteredTrains(trains, departureStation, arrivalStation)
+	trains = filteredByCriteria(trains, criteria)
 	return trains, nil // маєте повернути правильні значення
 }
 
@@ -116,4 +118,22 @@ func filteredTrains(trains Trains, departureStation string, arrivalStation strin
 		}
 	}
 	return validTrains
+}
+
+func filteredByCriteria(trains Trains, criteria string) Trains {
+	switch criteria {
+	case "price" :
+		sort.SliceStable(trains, func(i, j int)bool {
+			return trains[i].Price < trains[j].Price
+		})
+	case "arrivaltime" :
+		sort.SliceStable(trains, func(i, j int)bool {
+			return trains[i].ArrivalTime.Before(trains[j].ArrivalTime)
+		})
+	case "departuretime" :
+		sort.SliceStable(trains, func(i, j int)bool {
+			return trains[i].DepartureTime.Before(trains[j].DepartureTime)
+		})
+	}
+	return trains
 }
