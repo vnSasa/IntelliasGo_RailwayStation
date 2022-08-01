@@ -100,6 +100,7 @@ func main() {
 	//	... обробка помилки
 	if err != nil {
 		fmt.Printf("invalid data entered - %v", err)
+		return
 	}
 	//	... друк result
 	for _, v := range result {
@@ -111,9 +112,11 @@ func FindTrains(departureStation, arrivalStation, criteria string) (Trains, erro
 	// ... код
 	var trains Trains
 	trains = readDataJSON()
+	err := inputValidation(trains, departureStation, arrivalStation, criteria)
 	trains = filteredTrains(trains, departureStation, arrivalStation)
 	trains = filteredByCriteria(trains, criteria)
-	return trains, nil // маєте повернути правильні значення
+	
+	return trains, err // маєте повернути правильні значення
 }
 
 func filteredTrains(trains Trains, departureStation string, arrivalStation string) (validTrains Trains) {
@@ -153,4 +156,43 @@ func limitedOutput(trains Trains) (outputedTrains Trains) {
 		}
 	}
 	return
-} 
+}
+
+func inputValidation(trains Trains, departureStation, arrivalStation, criteria string) (error) {
+	// empty input
+	if strings.Compare(departureStation, "") == 0 {
+		return EmptyDepartureStation
+	}
+	if strings.Compare(arrivalStation, "") == 0 {
+		return EmptyArrivalStation
+	}
+	// bad input
+	var err error
+	errDepStation := BadDepartureStationInput
+	errArrStation := BadArrivalStationInput
+	for _, v := range trains {
+		depStation := strconv.Itoa(v.DepartureStationID)
+		arrStation := strconv.Itoa(v.ArrivalStationID)
+		if strings.Compare(departureStation, depStation) == 0 {
+			errDepStation = nil
+		}
+		if strings.Compare(arrivalStation, arrStation) == 0 {
+			errArrStation = nil
+		}
+	}
+	if errDepStation != nil {
+		err = errDepStation
+		return err
+	}
+	if errArrStation != nil {
+		err = errArrStation
+		return err
+	}
+	// unsupported criteria input
+	err = UnsupportedCriteria
+	if strings.Compare(criteria, "price") == 0 || strings.Compare(criteria, "arrivaltime") == 0 || strings.Compare(criteria, "departuretime") == 0 {
+		err = nil
+	}
+
+	return err
+}
