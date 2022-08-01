@@ -47,6 +47,13 @@ func readDataJSON() (data Trains) {
 	return data
 }
 
+func outputDataJSON(train Train) {
+	fmt.Printf("TrainID: %v, DepartureStationID: %v, ArrivalStationID: %v, "+
+				"Price: %v, ArrivalTime: %v, DepartureTime: %v\n",	
+				train.TrainID, train.DepartureStationID, train.ArrivalStationID, train.Price,
+				train.ArrivalTime.Format("15:04:05"), train.DepartureTime.Format("15:04:05"))
+}
+
 func (t *Train) UnmarshalJSON(data []byte)error {
 	var byteValue map[string]interface{}
 	err := json.Unmarshal(data, &byteValue)
@@ -96,7 +103,7 @@ func main() {
 	}
 	//	... друк result
 	for _, v := range result {
-		fmt.Println(v)
+		outputDataJSON(v)
 	}
 }
 
@@ -135,5 +142,15 @@ func filteredByCriteria(trains Trains, criteria string) Trains {
 			return trains[i].DepartureTime.Before(trains[j].DepartureTime)
 		})
 	}
-	return trains
+	return limitedOutput(trains)
 }
+
+func limitedOutput(trains Trains) (outputedTrains Trains) {
+	for _, v := range trains {
+		outputedTrains = append(outputedTrains, v)
+		if len(outputedTrains) == 3 {
+			return outputedTrains
+		}
+	}
+	return
+} 
