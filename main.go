@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 	"errors"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -24,12 +26,12 @@ var (
 type Trains []Train
 
 type Train struct {
-	TrainID            int		`json:"trainId"` 
-	DepartureStationID int		`json:"departureStationID"`
-	ArrivalStationID   int		`json:"arrivalStationId"`
-	Price              float32	`json:"price"`
-	ArrivalTime        time.Time	`json:"arrivalTime"`
-	DepartureTime      time.Time	`json:"departureTime"`
+	TrainID					int		`json:"trainId"` 
+	DepartureStationID		int		`json:"departureStationId"`
+	ArrivalStationID		int		`json:"arrivalStationId"`
+	Price					float32		`json:"price"`
+	ArrivalTime				time.Time		`json:"arrivalTime"`
+	DepartureTime			time.Time		`json:"departureTime"`
 }
 
 func readDataJSON() (data Trains) {
@@ -54,7 +56,7 @@ func (t *Train) UnmarshalJSON(data []byte)error {
 	id, _ := byteValue["trainId"].(float64)
 	t.TrainID = int(id)
 
-	depStationId, _ := byteValue["departureStationID"].(float64)
+	depStationId, _ := byteValue["departureStationId"].(float64)
 	t.DepartureStationID = int(depStationId)
 
 	arrStationId, _ := byteValue["arrivalStationId"].(float64)
@@ -101,5 +103,17 @@ func FindTrains(departureStation, arrivalStation, criteria string) (Trains, erro
 	// ... код
 	var trains Trains
 	trains = readDataJSON()
+	trains = filteredTrains(trains, departureStation, arrivalStation)
 	return trains, nil // маєте повернути правильні значення
+}
+
+func filteredTrains(trains Trains, departureStation string, arrivalStation string) (validTrains Trains) {
+	for _, v := range trains {
+		depStation := strconv.Itoa(v.DepartureStationID)
+		arrStation := strconv.Itoa(v.ArrivalStationID)
+		if strings.Compare(depStation, departureStation) == 0 && strings.Compare(arrStation, arrivalStation) == 0 {
+			validTrains = append(validTrains, v)
+		}
+	}
+	return validTrains
 }
