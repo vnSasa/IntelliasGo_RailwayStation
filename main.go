@@ -5,11 +5,20 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"errors"
 )
 
 const (
 	etalonTime = "15:04:05"
 	fileJSON = "data.json"
+)
+
+var (
+	UnsupportedCriteria			= errors.New("unsupported criteria")
+	EmptyDepartureStation		= errors.New("empty departure station")
+	EmptyArrivalStation			= errors.New("empty arrival station")
+	BadArrivalStationInput		= errors.New("bad arrival station input")
+	BadDepartureStationInput	= errors.New("bad departure station input")
 )
 
 type Trains []Train
