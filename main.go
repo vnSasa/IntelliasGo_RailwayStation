@@ -102,6 +102,9 @@ func main() {
 		fmt.Printf("invalid data entered - %v", err)
 		return
 	}
+	if result == nil {
+		fmt.Println("no trains were found according to the specified data")
+	}
 	//	... друк result
 	for _, v := range result {
 		outputDataJSON(v)
@@ -136,11 +139,11 @@ func filteredByCriteria(trains Trains, criteria string) Trains {
 		sort.SliceStable(trains, func(i, j int)bool {
 			return trains[i].Price < trains[j].Price
 		})
-	case "arrivaltime" :
+	case "arrival-time" :
 		sort.SliceStable(trains, func(i, j int)bool {
 			return trains[i].ArrivalTime.Before(trains[j].ArrivalTime)
 		})
-	case "departuretime" :
+	case "departure-time" :
 		sort.SliceStable(trains, func(i, j int)bool {
 			return trains[i].DepartureTime.Before(trains[j].DepartureTime)
 		})
@@ -167,30 +170,17 @@ func inputValidation(trains Trains, departureStation, arrivalStation, criteria s
 		return EmptyArrivalStation
 	}
 	// bad input
-	var err error
-	errDepStation := BadDepartureStationInput
-	errArrStation := BadArrivalStationInput
-	for _, v := range trains {
-		depStation := strconv.Itoa(v.DepartureStationID)
-		arrStation := strconv.Itoa(v.ArrivalStationID)
-		if strings.Compare(departureStation, depStation) == 0 {
-			errDepStation = nil
-		}
-		if strings.Compare(arrivalStation, arrStation) == 0 {
-			errArrStation = nil
-		}
+	depStation, err := strconv.Atoi(departureStation)
+	if err != nil || depStation < 1 {
+		return BadDepartureStationInput
 	}
-	if errDepStation != nil {
-		err = errDepStation
-		return err
-	}
-	if errArrStation != nil {
-		err = errArrStation
-		return err
+	arrStation, err := strconv.Atoi(arrivalStation)
+	if err != nil || arrStation < 1 {
+		return BadArrivalStationInput
 	}
 	// unsupported criteria input
 	err = UnsupportedCriteria
-	if strings.Compare(criteria, "price") == 0 || strings.Compare(criteria, "arrivaltime") == 0 || strings.Compare(criteria, "departuretime") == 0 {
+	if strings.Compare(criteria, "price") == 0 || strings.Compare(criteria, "arrival-time") == 0 || strings.Compare(criteria, "departure-time") == 0 {
 		err = nil
 	}
 
