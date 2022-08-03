@@ -114,10 +114,13 @@ func main() {
 func FindTrains(departureStation, arrivalStation, criteria string) (Trains, error) {
 	// ... код
 	var trains Trains
-	trains = readDataJSON()
+	trains = nil
 	err := inputValidation(trains, departureStation, arrivalStation, criteria)
-	trains = filteredTrains(trains, departureStation, arrivalStation)
-	trains = filteredByCriteria(trains, criteria)
+	if err == nil {
+		trains = readDataJSON()
+		trains = filteredTrains(trains, departureStation, arrivalStation)
+		trains = filteredByCriteria(trains, criteria)
+	}
 	
 	return trains, err // маєте повернути правильні значення
 }
