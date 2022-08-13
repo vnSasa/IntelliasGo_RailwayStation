@@ -17,34 +17,32 @@ const (
 )
 
 var (
-	UnsupportedCriteria		= errors.New("unsupported criteria")
-	EmptyDepartureStation		= errors.New("empty departure station")
-	EmptyArrivalStation		= errors.New("empty arrival station")
-	BadArrivalStationInput		= errors.New("bad arrival station input")
-	BadDepartureStationInput	= errors.New("bad departure station input")
+	unsupportedCriteria	= errors.New("unsupported criteria")
+	emptyDepartureStation	= errors.New("empty departure station")
+	emptyArrivalStation	= errors.New("empty arrival station")
+	badArrivalStationInput	= errors.New("bad arrival station input")
+	badDepartureStationInput	= errors.New("bad departure station input")
 )
 
 type Trains []Train
 
 type Train struct {
-	TrainID				int		`json:"trainId"` 
-	DepartureStationID		int		`json:"departureStationId"`
-	ArrivalStationID		int		`json:"arrivalStationId"`
-	Price				float32		`json:"price"`
-	ArrivalTime			time.Time	`json:"arrivalTime"`
-	DepartureTime			time.Time	`json:"departureTime"`
+	TrainID	int	`json:"trainId"` 
+	DepartureStationID	int	`json:"departureStationId"`
+	ArrivalStationID	int	`json:"arrivalStationId"`
+	Price	float32	`json:"price"`
+	ArrivalTime	time.Time	`json:"arrivalTime"`
+	DepartureTime	time.Time	`json:"departureTime"`
 }
 
-func readDataJSON() (data Trains) {
+func readDataJSON() (data Trains, err error) {
 	jsonFile, err := os.ReadFile(fileJSON)
-	if err != nil {
-		fmt.Println(err)
-	}
+	if err != nil { return nil, err }
+	
 	err = json.Unmarshal(jsonFile, &data)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return data
+	if err != nil { return nil, err }
+	
+	return data, nil
 }
 
 func outputDataJSON(train Train) {
@@ -56,28 +54,33 @@ func outputDataJSON(train Train) {
 
 func (t *Train) UnmarshalJSON(data []byte)error {
 	var byteValue map[string]interface{}
+	
 	err := json.Unmarshal(data, &byteValue)
-	if err != nil {
-		return err
+	if err != nil { return err }
+
+	if id, ok := byteValue["trainId"].(float64); ok {
+		t.TrainID = int(id)
 	}
 
-	id, _ := byteValue["trainId"].(float64)
-	t.TrainID = int(id)
+	if depStationId, ok := byteValue["departureStationId"].(float64); ok {
+		t.DepartureStationID = int(depStationId)
+	}
+	
+	if arrStationId, ok := byteValue["arrivalStationId"].(float64); ok {
+		t.ArrivalStationID = int(arrStationId)
+	}
 
-	depStationId, _ := byteValue["departureStationId"].(float64)
-	t.DepartureStationID = int(depStationId)
+	if price, ok := byteValue["price"].(float64); ok {
+		t.Price = float32(price)
+	}
 
-	arrStationId, _ := byteValue["arrivalStationId"].(float64)
-	t.ArrivalStationID = int(arrStationId)
-
-	price, _ := byteValue["price"].(float64)
-	t.Price = float32(price)
-
-	arrTime, _ := byteValue["arrivalTime"].(string)
-	t.ArrivalTime, _ = time.Parse(etalonTime, arrTime)
-
-	depTime, _ := byteValue["departureTime"].(string)
-	t.DepartureTime, _ = time.Parse(etalonTime, depTime)
+	if arrTime, ok := byteValue["arrivalTime"].(string); ok {
+		t.ArrivalTime, _ = time.Parse(etalonTime, arrTime)
+	}
+	
+	if depTime, ok := byteValue["departureTime"].(string); ok {
+		t.DepartureTime, _ = time.Parse(etalonTime, depTime)
+	}
 
 	return nil
 }
@@ -91,20 +94,25 @@ func main() {
 	//	... запит даних від користувача
 	fmt.Println("enter departure station id: ")
 	departureStation := userRequest()
+	
 	fmt.Println("enter arrival station id: ")
 	arrivalStation := userRequest()
+	
 	fmt.Println("enter criteria: ")
 	criteria := strings.ToLower(userRequest())
 
-	result, err := FindTrains(departureStation, arrivalStation, criteria)
 	//	... обробка помилки
+	
+	result, err := FindTrains(departureStation, arrivalStation, criteria)
 	if err != nil {
 		fmt.Printf("invalid data entered - %v", err)
 		return
 	}
-	if result == nil {
+	
+	if len(result) == 0 {
 		fmt.Println("no trains were found according to the specified data")
 	}
+	
 	//	... друк result
 	for _, v := range result {
 		outputDataJSON(v)
@@ -114,21 +122,27 @@ func main() {
 func FindTrains(departureStation, arrivalStation, criteria string) (Trains, error) {
 	// ... код
 	var trains Trains
-	trains = nil
-	err := inputValidation(trains, departureStation, arrivalStation, criteria)
-	if err == nil {
-		trains = readDataJSON()
-		trains = filteredTrains(trains, departureStation, arrivalStation)
-		trains = filteredByCriteria(trains, criteria)
+	
+	trains, err := readDataJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	err = inputValidation(trains, departureStation, arrivalStation, criteria)
+	if err != nil {
+		return nil, err
 	}
 	
+	trains = filteredByCriteria(filteredTrains(trains, departureStation, arrivalStation), criteria)
+
 	return trains, err // маєте повернути правильні значення
 }
 
-func filteredTrains(trains Trains, departureStation string, arrivalStation string) (validTrains Trains) {
+func filteredTrains(trains Trains, departureStation, arrivalStation string) (validTrains Trains) {
 	for _, v := range trains {
 		depStation := strconv.Itoa(v.DepartureStationID)
 		arrStation := strconv.Itoa(v.ArrivalStationID)
+		
 		if strings.Compare(depStation, departureStation) == 0 && strings.Compare(arrStation, arrivalStation) == 0 {
 			validTrains = append(validTrains, v)
 		}
@@ -157,6 +171,7 @@ func filteredByCriteria(trains Trains, criteria string) Trains {
 func limitedOutput(trains Trains) (outputedTrains Trains) {
 	for _, v := range trains {
 		outputedTrains = append(outputedTrains, v)
+		
 		if len(outputedTrains) == 3 {
 			return outputedTrains
 		}
@@ -166,25 +181,31 @@ func limitedOutput(trains Trains) (outputedTrains Trains) {
 
 func inputValidation(trains Trains, departureStation, arrivalStation, criteria string) (error) {
 	// empty input
-	if strings.Compare(departureStation, "") == 0 {
-		return EmptyDepartureStation
+	if len(departureStation) == 0 {
+		return emptyDepartureStation
 	}
-	if strings.Compare(arrivalStation, "") == 0 {
-		return EmptyArrivalStation
+	
+	if len(arrivalStation) == 0 {
+		return emptyArrivalStation
 	}
+	
 	// bad input
 	depStation, err := strconv.Atoi(departureStation)
 	if err != nil || depStation < 1 {
-		return BadDepartureStationInput
+		return badDepartureStationInput
 	}
+	
 	arrStation, err := strconv.Atoi(arrivalStation)
 	if err != nil || arrStation < 1 {
-		return BadArrivalStationInput
+		return badArrivalStationInput
 	}
+	
 	// unsupported criteria input
-	err = UnsupportedCriteria
-	if strings.Compare(criteria, "price") == 0 || strings.Compare(criteria, "arrival-time") == 0 || strings.Compare(criteria, "departure-time") == 0 {
-		err = nil
+	switch criteria {
+		case "price" : return nil
+		case "arrival-time" : return nil
+		case "departure-time" : return nil
+		default : err = unsupportedCriteria
 	}
 
 	return err
